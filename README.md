@@ -1,5 +1,5 @@
 
-
+<del>
 There are 2 files created for this project, base and base2.
 
 base2 should solve problems 2, 3 and 5 (uninitialized variable error and unused variable warning). It doesn't support conditional break
@@ -143,3 +143,5 @@ The interpreter could also perform static analysis on the program  equipped with
 Ok, one module loaded.
 *InterpreterBase> analyze prog10
 "Uncaught exception: Access variable before initialization : arg"
+
+</del>
