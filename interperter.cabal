@@ -5,8 +5,7 @@ version:            0.1.0.0
 -- synopsis:
 -- description:
 homepage:           https://github.com/githubuser/resits#readme
-
--- license:            GPL-2
+license:            GPL-3.0-only
 license-file:       LICENSE
 author:             Author name here
 maintainer:         example@example.com
