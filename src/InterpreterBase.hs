@@ -1,4 +1,4 @@
-module InterpreterBase where
+module InterpreterBase (analyze, prog10) where
 
 --I want these language extensions for my syntactic sugaring tricks at the end
 
