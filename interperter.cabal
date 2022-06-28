@@ -78,7 +78,7 @@ library
   exposed-modules:
     Analyzer
     Constant
-    InterpreterBase
+    Interpreter
     Syntax
 
 executable interperter

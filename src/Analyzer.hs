@@ -62,6 +62,7 @@ parserib e0 e1 = parser e0 >> parser e1
 
 check :: Statement -> Sa ()
 check (Seq s0 s1) = check s0 >> check s1
+check (Break s0 s1) = check s0 >> check s1
 check (Assign s v) = do
     parser v
     increRefCount (s, 0)

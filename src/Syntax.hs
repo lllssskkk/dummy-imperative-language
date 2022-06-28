@@ -26,6 +26,7 @@ data Statement where
     While :: Expr -> Statement -> Statement
     Print :: Expr -> Statement
     Seq :: Statement -> Statement -> Statement
+    Break :: Statement
     Pass :: Statement
     deriving stock (Eq, Show)
 
