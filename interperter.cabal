@@ -1,23 +1,83 @@
-name:                interperter
-version:             0.1.0.0
+cabal-version:      3.0
+name:               interperter
+version:            0.1.0.0
+
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/resits#readme
-license:             BSD3
-license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2021 Author name here
-category:            Web
-build-type:          Simple
-cabal-version:       >=1.10
-extra-source-files:  README.md
+homepage:           https://github.com/githubuser/resits#readme
+
+-- license:            GPL-2
+license-file:       LICENSE
+author:             Author name here
+maintainer:         example@example.com
+copyright:          2021 Author name here
+category:           Web
+build-type:         Simple
+extra-source-files: README.md
+
+flag dev
+  description: Enable lean development
+  default:     False
+  manual:      True
+
+common common-ghc-options
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-uni-patterns
+    -Wmissing-deriving-strategies -Wredundant-constraints
+    -Wmissing-home-modules -Wmissing-export-lists -fwarn-unused-imports
+
+  if !flag(dev)
+    ghc-options: -Werror
+
+common common-dependencies
+  build-depends:
+
+common common-extensions
+  default-extensions:
+    BangPatterns
+    DataKinds
+    DeriveAnyClass
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    ExplicitForAll
+    FlexibleContexts
+    FlexibleInstances
+    GADTs
+    GeneralizedNewtypeDeriving
+    LambdaCase
+    MultiParamTypeClasses
+    NamedFieldPuns
+    NumericUnderscores
+    OverloadedStrings
+    RankNTypes
+    ScopedTypeVariables
+    StandaloneDeriving
+    TemplateHaskell
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    TypeSynonymInstances
 
 executable interperter
-  hs-source-dirs:      src
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5, mtl, containers
-  other-modules:       InterpreterBase
-                       InterpreterBase2
-  ghc-options: -Wall 
+  import:           common-extensions
+  import:           common-dependencies
+  import:           common-ghc-options
+  hs-source-dirs:   src
+  main-is:          Main.hs
+  default-language: Haskell2010
+  build-depends:
+    , base        >=4.7 && <5
+    , containers
+    , mtl
+
+  other-modules:
+    InterpreterBase
+    Syntax
+
+-- InterpreterBase2

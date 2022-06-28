@@ -1,7 +1,7 @@
-module Main where
+module Main (main) where
 
-import InterpreterBase2 ()
+import InterpreterBase (analyze, prog10)
 
 main :: IO ()
 main = do
-  putStrLn "hello world"
+  analyze prog10
