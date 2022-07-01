@@ -10,21 +10,14 @@ import Control.Monad.Writer (
     WriterT (runWriterT),
  )
 import qualified Data.Map as Map
-import Data.Maybe (fromJust, isJust)
 
--- import Program (program)
-
--- import Program (program)
-import Constant (lambdaSymbol, Name)
+import Constant (Name, lambdaSymbol)
 import Program (Expr (..), Program, Statement (..))
 import qualified System.IO as System
 
 type SaEnv = (Map.Map String Int, [String])
 
 type Sa a = StateT SaEnv (ExceptT String IO) a
-
--- runSa :: StateT Env (ExceptT String IO) a -> IO (Either String (a, Env))
--- runSa p = runExceptT (runStateT p Map.empty)
 
 increRefCount :: (Name, Int) -> Sa ()
 increRefCount (s, i) = state (\(table, list) -> ((), (Map.insert s i table, list)))
@@ -46,8 +39,9 @@ parser (Gt e0 e1) = parserib e0 e1
 parser (Lt e0 e1) = parserib e0 e1
 parser (Var s) = do
     (env, _) <- get
-    let varReferenceNum = Map.lookup s env
-    if isJust varReferenceNum then increRefCount (s, 1 + fromJust varReferenceNum) else refPriorInitialization s
+    case Map.lookup s env of
+        Just varRefNum -> increRefCount (s, 1 + varRefNum)
+        Nothing -> refPriorInitialization s
     return ()
 
 -- Int typed expressions

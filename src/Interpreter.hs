@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
-
 module Interpreter (run) where
 
 import Prelude hiding (lookup, print)
@@ -27,6 +25,7 @@ import qualified Data.Map as Map
 import qualified System.IO as System
 
 import Constant (Name, lambdaSymbol)
+import Control.Monad (when)
 import Program (Expr (..), Program, Statement (..), Val (..))
 
 type Env = Map.Map Name Val
@@ -123,7 +122,7 @@ step (While cond s) =
     st <- get
     case runEval st (eval cond) of
       Right (B val) -> do
-        if val then do step s >> step (While cond s) else return ()
+        when val $ do step s >> step (While cond s)
       Right (I val) -> do throwError' $ "The while statement's condition shouldn't be an Int value " ++ show val
       Left err -> throwError' err
 step Break = do
