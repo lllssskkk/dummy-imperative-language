@@ -1,11 +1,6 @@
-module Constant (Name, Program) where
-
-import Control.Monad.Writer (
-    Writer,
- )
-
-import Syntax (Statement)
+module Constant (lambdaSymbol, Name) where
 
 type Name = String
 
-type Program = Writer Statement ()
+lambdaSymbol :: String
+lambdaSymbol = "λ>: "

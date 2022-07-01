@@ -1,17 +1,23 @@
 module Analyzer (analyze) where
 
-import Control.Monad.Except
-import Control.Monad.Identity
-import Control.Monad.State
+import Control.Monad.Except (ExceptT, runExceptT)
+import Control.Monad.Identity (Identity (runIdentity))
+import Control.Monad.State (
+    MonadState (get, state),
+    StateT (runStateT),
+ )
 import Control.Monad.Writer (
     WriterT (runWriterT),
  )
 import qualified Data.Map as Map
-import Data.Maybe
-import qualified System.IO as System
+import Data.Maybe (fromJust, isJust)
 
-import Constant (Name, Program)
-import Syntax (Expr (..), Statement (..))
+-- import Program (program)
+
+-- import Program (program)
+import Constant (lambdaSymbol, Name)
+import Program (Expr (..), Program, Statement (..))
+import qualified System.IO as System
 
 type SaEnv = (Map.Map String Int, [String])
 
@@ -86,8 +92,8 @@ analyze program = do
     result <- runExceptT $ (runStateT $ check $ snd $ runIdentity (runWriterT program)) (Map.empty, [])
     case result of
         Right ((), (env, list)) -> do
-            let unused = (++ " are unused variables") $ show . Map.keys $ Map.filter (== 0) env
-            let refPriorInit = (++ " got referenced before initialization") $ show list
+            let unused = (++) lambdaSymbol $ (++ " are unused variables") $ show . Map.keys $ Map.filter (== 0) env
+            let refPriorInit = (++) lambdaSymbol $ (++ " got referenced before initialization") $ show list
             System.putStrLn unused
             System.putStrLn refPriorInit
-        Left exn -> System.print ("Uncaught exception: " ++ exn)
+        Left exn -> System.print $ (++) lambdaSymbol ("Uncaught exception: " ++ exn)

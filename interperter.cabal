@@ -78,7 +78,8 @@ library
     Analyzer
     Constant
     Interpreter
-    Syntax
+    Program
+
 
 executable interperter
   import:           common-extensions
