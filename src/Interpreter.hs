@@ -25,14 +25,13 @@ import qualified Data.Map as Map
 import qualified System.IO as System
 
 import Constant (Name, lambdaSymbol)
-import Control.Monad (when)
 import Program (Expr (..), Program, Statement (..), Val (..))
 
 type Env = Map.Map Name Val
 
 lookup :: MonadError String m => String -> Map.Map String a -> m a
 lookup k t = case Map.lookup k t of
-  Just x -> return x
+  Just x -> pure x
   Nothing -> throwError' ("Unknown variable " ++ k)
 
 {-- Monadic style expression evaluator,
@@ -50,7 +49,7 @@ evali op e0 e1 = do
   e0' <- eval e0
   e1' <- eval e1
   case (e0', e1') of
-    (I i0, I i1) -> return $ I (i0 `op` i1)
+    (I i0, I i1) -> pure $ I (i0 `op` i1)
     _ -> throwError' "type error in arithmetic expression"
 
 --Boolean typed expressions
@@ -59,7 +58,7 @@ evalb op e0 e1 = do
   e0' <- eval e0
   e1' <- eval e1
   case (e0', e1') of
-    (B i0, B i1) -> return $ B (i0 `op` i1)
+    (B i0, B i1) -> pure $ B (i0 `op` i1)
     _ -> throwError' "type error in boolean expression"
 
 --Operations over integers which produce booleans
@@ -68,12 +67,13 @@ evalib op e0 e1 = do
   e0' <- eval e0
   e1' <- eval e1
   case (e0', e1') of
-    (I i0, I i1) -> return $ B (i0 `op` i1)
+    (I i0, I i1) -> pure $ B (i0 `op` i1)
     _ -> throwError' "type error in arithmetic expression"
 
 --Evaluate an expression
 eval :: Expr -> Eval Val
-eval (Const v) = return v
+eval (Lambda names expr) = pure $ Closure names expr
+eval (Const v) = pure v
 eval (Add e0 e1) = evali (+) e0 e1
 eval (Sub e0 e1) = evali (-) e0 e1
 eval (Mul e0 e1) = evali (*) e0 e1
@@ -92,10 +92,26 @@ eval (Var s) = do
 
 type Run a = StateT Env (ExceptT String IO) a
 
-set :: (Name, Val) -> Run ()
-set (s, i) = state (\table -> ((), Map.insert s i table))
+set :: (Name, Val) -> Run Val
+set (s, i) = state (\table -> (I 1, Map.insert s i table))
 
-step :: Statement -> Run ()
+step :: Statement -> Run Val
+step (Function fnName bindings logic) = do
+  set (fnName, Closure bindings logic)
+step (Call fnName inputs) = do
+  st <- get
+  case runEval st (eval $ Var fnName) of
+    Right (Closure names expr) -> do
+      let localEnv = Map.fromList $ zip names inputs
+      let env' = st <> localEnv
+      case runEval env' (eval expr) of
+        Right val -> do
+          printStrLn $ "The return value of function" ++ fnName ++ " is : "
+          printout val
+          pure val
+        Left err -> throwError' err
+    Right _ -> throwError' "This is a function call, not expect variable name"
+    Left _ -> throwError' $ fnName ++ " function is not defined yet"
 step (Assign s v) =
   do
     st <- get
@@ -107,7 +123,9 @@ step (Print e) =
   do
     st <- get
     case runEval st (eval e) of
-      Right val -> printout val
+      Right val -> do
+        printout val
+        pure val
       Left err -> throwError' err
 step (If cond s0 s1) =
   do
@@ -116,14 +134,20 @@ step (If cond s0 s1) =
       Right (B val) -> do
         if val then do step s0 else do step s1
       Right (I val) -> do throwError' $ "The if statement's condition shouldn't be an Int value " ++ show val
+      Right (Double val) -> do throwError' $ "The if statement's condition shouldn't be an Int value " ++ show val
+      Right (Closure _ _) -> do throwError' "The if statement's condition shouldn't be an function value "
       Left err -> throwError' err
 step (While cond s) =
   do
     st <- get
     case runEval st (eval cond) of
       Right (B val) -> do
-        when val $ do step s >> step (While cond s)
+        if val
+          then step s >> step (While cond s)
+          else pure $ I 1
       Right (I val) -> do throwError' $ "The while statement's condition shouldn't be an Int value " ++ show val
+      Right (Double val) -> do throwError' $ "The if statement's condition shouldn't be an Int value " ++ show val
+      Right (Closure _ _) -> do throwError' "The if statement's condition shouldn't be an function value "
       Left err -> throwError' err
 step Break = do
   printStrLn "Enter a breakpoint"
@@ -132,14 +156,19 @@ step Break = do
   printStrLn $ (++) "Current variables : " $ show . Map.keys $ st
   instruction <- getInput
   case instruction of
-    "Continue" -> return ()
+    "Continue" -> pure $ I 1
     _ -> do
       let variableValue = Map.lookup instruction st
-      maybe (throwError' ("Unknown Variable : " ++ instruction)) printout variableValue
-step Pass = return ()
+      case variableValue of
+        Just x -> do
+          printout x
+          pure $ I 1
+        Nothing ->
+          throwError' ("Unknown Variable : " ++ instruction)
+step Pass = pure $ I 1
 
 printout :: Val -> Run ()
-printout = liftIO . System.print
+printout = lift . lift . System.print
 
 getInput :: Run String
 getInput = liftIO System.getLine
@@ -154,5 +183,5 @@ run :: Program -> IO ()
 run program = do
   result <- runExceptT $ (runStateT $ step (snd $ runIdentity (runWriterT program))) Map.empty
   case result of
-    Right ((), env) -> putStrLn $ (++) lambdaSymbol $ show env
+    Right (_, env) -> putStrLn $ (++) lambdaSymbol $ show env
     Left exn -> putStrLn (lambdaSymbol ++ "Uncaught exception: " ++ exn)

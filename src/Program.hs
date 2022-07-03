@@ -1,4 +1,4 @@
-module Program (Val (..), Expr (..), Statement (..), Program, int, bool, var, (.*), (.-), (.=), assign, compile, iif, while, breakpoint, printt) where
+module Program (Val (..), Expr (..), Statement (..), Program, int, bool, var, (.*), (.-), (.=), assign, compile, iif, while, breakpoint, printt, function, call) where
 
 import Constant
 import Control.Monad.Identity (Identity (runIdentity))
@@ -8,6 +8,8 @@ import Prelude hiding (print)
 data Val where
     I :: Int -> Val
     B :: Bool -> Val
+    Double :: Double -> Val
+    Closure :: [Name] -> Expr -> Val
     deriving stock (Eq, Show)
 
 data Expr where
@@ -22,11 +24,15 @@ data Expr where
     Sub :: Expr -> Expr -> Expr
     Mul :: Expr -> Expr -> Expr
     Div :: Expr -> Expr -> Expr
+    Lambda :: [Name] -> Expr -> Expr
+    -- Apply :: Expr -> [Expr] -> Expr
     Var :: String -> Expr
     deriving stock (Eq, Show)
 
 data Statement where
-    Assign :: String -> Expr -> Statement
+    Assign :: Name -> Expr -> Statement
+    Function :: Name -> [Name] -> Expr -> Statement
+    Call :: Name -> [Val] -> Statement
     If :: Expr -> Statement -> Statement -> Statement
     While :: Expr -> Statement -> Statement
     Print :: Expr -> Statement
@@ -93,6 +99,14 @@ while cond body = tell $ While cond (compile body)
 -- breakpoint
 breakpoint :: Program
 breakpoint = tell Break
+
+-- function
+function :: Name -> [Name] -> Expr -> Program
+function fnName bindings body = tell $ Function fnName bindings body
+
+-- function calls
+call :: Name -> [Val] -> Program
+call fnName inputs = tell $ Call fnName inputs
 
 {-- This is why I wanted to hide the system function "print": --}
 
