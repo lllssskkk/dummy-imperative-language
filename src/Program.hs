@@ -34,7 +34,7 @@ data Statement where
     Call :: FnName -> [Val] -> VarName -> Statement
     If :: Expr -> Statement -> Statement -> Statement
     While :: Expr -> Statement -> Statement
-    Print :: Expr -> Statement
+    Print :: String -> Statement
     Seq :: Statement -> Statement -> Statement
     Break :: Statement
     Pass :: Statement
@@ -110,5 +110,5 @@ call fnName inputs varName = tell $ Call fnName inputs varName
 {-- This is why I wanted to hide the system function "print": --}
 
 -- print accepts the instruction as its first argument
-printt :: Expr -> Program
+printt :: VarName -> Program
 printt e = tell $ Print e

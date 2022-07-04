@@ -29,9 +29,9 @@ prog10 = do
     while
         (var "counter" `Gt` int 1)
         ( do
-            breakpoint
+            -- breakpoint
             "total" .= ("total" :: String) .* ("counter" :: String)
             "counter" .= ("counter" :: String) .- (1 :: Int)
-            printt (var "counter")
+            -- printt (var "counter")
         )
-    printt $ var "total"
+    printt "total"

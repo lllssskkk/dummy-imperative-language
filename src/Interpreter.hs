@@ -106,7 +106,7 @@ step (Call fnName inputs varName) = do
       let env' = st <> localEnv
       case runEval env' (eval expr) of
         Right val -> do
-          printStrLn $ "The return value of function" ++ fnName ++ " is : "
+          printStrLn $ "The return value of function " ++ fnName ++ " is : "
           printout val
           step (Assign varName $ Const val)
         Left err -> throwError' err
@@ -122,8 +122,9 @@ step (Seq s0 s1) = step s0 >> step s1
 step (Print e) =
   do
     st <- get
-    case runEval st (eval e) of
+    case runEval st (eval $ Var e) of
       Right val -> do
+        printStr $ "The value inside " ++ e ++ " is : "
         printout val
       Left err -> throwError' err
 step (If cond s0 s1) =
@@ -133,7 +134,7 @@ step (If cond s0 s1) =
       Right (B val) -> do
         if val then do step s0 else do step s1
       Right (I val) -> do throwError' $ "The if statement's condition shouldn't be an Int value " ++ show val
-      Right (Double val) -> do throwError' $ "The if statement's condition shouldn't be an Int value " ++ show val
+      Right (Double val) -> do throwError' $ "The if statement's condition shouldn't be an Double value " ++ show val
       Right (Closure _ _) -> do throwError' "The if statement's condition shouldn't be an function value "
       Left err -> throwError' err
 step (While cond s) =
@@ -169,11 +170,14 @@ step Pass = pure ()
 printout :: Val -> Run ()
 printout = lift . lift . System.print
 
-getInput :: Run String
-getInput = liftIO System.getLine
+printStr :: String -> Run ()
+printStr = lift . lift . putStr
 
 printStrLn :: String -> Run ()
 printStrLn str = lift . lift . putStrLn $ lambdaSymbol ++ str
+
+getInput :: Run String
+getInput = liftIO System.getLine
 
 throwError' :: MonadError [Char] m => [Char] -> m a
 throwError' x = throwError $ lambdaSymbol ++ x

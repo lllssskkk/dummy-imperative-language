@@ -70,7 +70,7 @@ check (Assign s v) = do
     parser v
     increRefCount (s, 0)
 check (Print e) = do
-    parser e
+    parser $ Var e
     return ()
 check (If cond s0 s1) = do
     parser cond
