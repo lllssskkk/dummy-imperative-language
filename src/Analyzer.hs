@@ -11,7 +11,7 @@ import Control.Monad.Writer (
  )
 import qualified Data.Map as Map
 
-import Constant (Name, lambdaSymbol)
+import Constant (VarName, lambdaSymbol)
 import Program (Expr (..), Program, Statement (..))
 import qualified System.IO as System
 
@@ -19,13 +19,14 @@ type SaEnv = (Map.Map String Int, [String])
 
 type Sa a = StateT SaEnv (ExceptT String IO) a
 
-increRefCount :: (Name, Int) -> Sa ()
+increRefCount :: (VarName, Int) -> Sa ()
 increRefCount (s, i) = state (\(table, list) -> ((), (Map.insert s i table, list)))
 
 refPriorInitialization :: String -> Sa ()
 refPriorInitialization varName = state (\(table, list) -> ((), (table, varName : list)))
 
 parser :: Expr -> Sa ()
+parser (Lambda _ _) = return ()
 parser (Const _) = return ()
 parser (Add e0 e1) = parseri e0 e1
 parser (Sub e0 e1) = parseri e0 e1
@@ -61,6 +62,8 @@ parserib e0 e1 = parser e0 >> parser e1
 -- Check responds to statements correspondingly
 
 check :: Statement -> Sa ()
+check (Call _fnName _inputs _varName) = return ()
+check (Function _fnName _bindings expr) = parser expr
 check Break = return ()
 check (Seq s0 s1) = check s0 >> check s1
 check (Assign s v) = do

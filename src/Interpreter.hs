@@ -24,10 +24,10 @@ import Control.Monad.Writer (
 import qualified Data.Map as Map
 import qualified System.IO as System
 
-import Constant (Name, lambdaSymbol)
+import Constant (VarName, lambdaSymbol)
 import Program (Expr (..), Program, Statement (..), Val (..))
 
-type Env = Map.Map Name Val
+type Env = Map.Map VarName Val
 
 lookup :: MonadError String m => String -> Map.Map String a -> m a
 lookup k t = case Map.lookup k t of
@@ -92,13 +92,13 @@ eval (Var s) = do
 
 type Run a = StateT Env (ExceptT String IO) a
 
-set :: (Name, Val) -> Run Val
-set (s, i) = state (\table -> (I 1, Map.insert s i table))
+set :: (VarName, Val) -> Run ()
+set (s, i) = state (\table -> ((), Map.insert s i table))
 
-step :: Statement -> Run Val
+step :: Statement -> Run ()
 step (Function fnName bindings logic) = do
   set (fnName, Closure bindings logic)
-step (Call fnName inputs) = do
+step (Call fnName inputs varName) = do
   st <- get
   case runEval st (eval $ Var fnName) of
     Right (Closure names expr) -> do
@@ -108,7 +108,7 @@ step (Call fnName inputs) = do
         Right val -> do
           printStrLn $ "The return value of function" ++ fnName ++ " is : "
           printout val
-          pure val
+          step (Assign varName $ Const val)
         Left err -> throwError' err
     Right _ -> throwError' "This is a function call, not expect variable name"
     Left _ -> throwError' $ fnName ++ " function is not defined yet"
@@ -125,7 +125,6 @@ step (Print e) =
     case runEval st (eval e) of
       Right val -> do
         printout val
-        pure val
       Left err -> throwError' err
 step (If cond s0 s1) =
   do
@@ -144,7 +143,7 @@ step (While cond s) =
       Right (B val) -> do
         if val
           then step s >> step (While cond s)
-          else pure $ I 1
+          else pure ()
       Right (I val) -> do throwError' $ "The while statement's condition shouldn't be an Int value " ++ show val
       Right (Double val) -> do throwError' $ "The if statement's condition shouldn't be an Int value " ++ show val
       Right (Closure _ _) -> do throwError' "The if statement's condition shouldn't be an function value "
@@ -156,16 +155,16 @@ step Break = do
   printStrLn $ (++) "Current variables : " $ show . Map.keys $ st
   instruction <- getInput
   case instruction of
-    "Continue" -> pure $ I 1
+    "Continue" -> pure ()
     _ -> do
       let variableValue = Map.lookup instruction st
       case variableValue of
         Just x -> do
           printout x
-          pure $ I 1
+          step Break
         Nothing ->
           throwError' ("Unknown Variable : " ++ instruction)
-step Pass = pure $ I 1
+step Pass = pure ()
 
 printout :: Val -> Run ()
 printout = lift . lift . System.print

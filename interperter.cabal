@@ -80,7 +80,6 @@ library
     Interpreter
     Program
 
-
 executable interperter
   import:           common-extensions
   import:           common-dependencies

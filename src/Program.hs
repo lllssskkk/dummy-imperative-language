@@ -9,7 +9,7 @@ data Val where
     I :: Int -> Val
     B :: Bool -> Val
     Double :: Double -> Val
-    Closure :: [Name] -> Expr -> Val
+    Closure :: [VarName] -> Expr -> Val
     deriving stock (Eq, Show)
 
 data Expr where
@@ -24,15 +24,14 @@ data Expr where
     Sub :: Expr -> Expr -> Expr
     Mul :: Expr -> Expr -> Expr
     Div :: Expr -> Expr -> Expr
-    Lambda :: [Name] -> Expr -> Expr
-    -- Apply :: Expr -> [Expr] -> Expr
-    Var :: String -> Expr
+    Lambda :: [VarName] -> Expr -> Expr
+    Var :: VarName -> Expr
     deriving stock (Eq, Show)
 
 data Statement where
-    Assign :: Name -> Expr -> Statement
-    Function :: Name -> [Name] -> Expr -> Statement
-    Call :: Name -> [Val] -> Statement
+    Assign :: VarName -> Expr -> Statement
+    Function :: FnName -> [VarName] -> Expr -> Statement
+    Call :: FnName -> [Val] -> VarName -> Statement
     If :: Expr -> Statement -> Statement -> Statement
     While :: Expr -> Statement -> Statement
     Print :: Expr -> Statement
@@ -85,7 +84,7 @@ compile :: Program -> Statement
 compile p = snd . runIdentity $ runWriterT p
 
 infixl 1 .=
-(.=) :: Name -> Expr -> Program
+(.=) :: VarName -> Expr -> Program
 variable .= val = tell $ assign variable val
 
 -- iff accepts the instruction as its first argument
@@ -101,12 +100,12 @@ breakpoint :: Program
 breakpoint = tell Break
 
 -- function
-function :: Name -> [Name] -> Expr -> Program
+function :: FnName -> [VarName] -> Expr -> Program
 function fnName bindings body = tell $ Function fnName bindings body
 
 -- function calls
-call :: Name -> [Val] -> Program
-call fnName inputs = tell $ Call fnName inputs
+call :: FnName -> [Val] -> VarName -> Program
+call fnName inputs varName = tell $ Call fnName inputs varName
 
 {-- This is why I wanted to hide the system function "print": --}
 
